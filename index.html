@@ -176,35 +176,17 @@
   <button onclick="deleteSticky()">Delete</button>
 </div>
 
-<script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
-const supabase = createClient(
-  'https://xhsnkexolqhgucplmjyq.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhoc25rZXhvbHFoZ3VjcGxtanlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5ODU0OTEsImV4cCI6MjA2ODU2MTQ5MX0.XhsnJAWZtFNX3915p8mUF6RB6NmgfD3d6wUZ7DaoC30'
-);
-
-const params = new URLSearchParams(window.location.search);
-const username = params.get("user");
-if (!username) window.location.href = 'login.html';
-
-let currentProject = null, projects = {}, userProjectsRow = null;
+<script>
+let currentProject = null, projects = {};
 const ws = document.getElementById("workspace");
 
-const { data, error } = await supabase.from('user_projects').select('*').eq('username', username).single();
-if (data) {
-  userProjectsRow = data;
-  projects = data.projects || {};
-  renderProjects();
+function saveProjects() {
+  localStorage.setItem("stickyProjects", JSON.stringify(projects));
 }
 
-async function saveProjects() {
-  if (userProjectsRow) {
-    await supabase.from('user_projects').update({ projects }).eq('username', username);
-  } else {
-    const { data } = await supabase.from('user_projects').insert([{ username, projects }]);
-    userProjectsRow = data[0];
-  }
+function loadProjects() {
+  const data = localStorage.getItem("stickyProjects");
+  if (data) projects = JSON.parse(data);
 }
 
 function toggleSidebar() {
@@ -224,10 +206,10 @@ function renderProjects() {
     li.textContent = name;
     li.classList.toggle("active", name === currentProject);
     li.onclick = () => { currentProject = name; renderProjects(); renderNotes(); };
-    li.ondblclick = async () => {
+    li.ondblclick = () => {
       if (confirm("Delete project?")) {
         delete projects[name];
-        await saveProjects();
+        saveProjects();
         currentProject = null;
         renderProjects();
         renderNotes();
@@ -237,18 +219,18 @@ function renderProjects() {
   });
 }
 
-document.getElementById("addProjectBtn").onclick = async () => {
+document.getElementById("addProjectBtn").onclick = () => {
   const name = prompt("Enter project name:");
   if (!name) return;
   projects[name] = [];
   currentProject = name;
-  await saveProjects();
+  saveProjects();
   renderProjects();
   renderNotes();
 };
 
 document.querySelectorAll(".palette div").forEach(div => {
-  div.onclick = async () => {
+  div.onclick = () => {
     if (!currentProject) return alert("Select a project first.");
     const note = {
       x: 200 + Math.random() * 800,
@@ -257,7 +239,7 @@ document.querySelectorAll(".palette div").forEach(div => {
       color: div.dataset.color
     };
     projects[currentProject].push(note);
-    await saveProjects();
+    saveProjects();
     renderNotes();
   };
 });
@@ -273,7 +255,7 @@ function renderNotes() {
     el.style.background = note.color;
     el.innerHTML = `<div class="header"></div><textarea>${note.text}</textarea>`;
     const ta = el.querySelector("textarea");
-    ta.oninput = async (e) => { note.text = e.target.value; await saveProjects(); };
+    ta.oninput = () => { note.text = ta.value; saveProjects(); };
     const hdr = el.querySelector(".header");
     hdr.onmousedown = dragStart(el, note);
     el.oncontextmenu = e => {
@@ -314,10 +296,10 @@ ws.addEventListener("mousemove", e => {
   }
 });
 
-ws.addEventListener("mouseup", async () => {
+ws.addEventListener("mouseup", () => {
   isDraggingNote = false;
   isDraggingWorkspace = false;
-  await saveProjects();
+  saveProjects();
 });
 
 let isDraggingWorkspace = false, lastMouseX, lastMouseY;
@@ -329,16 +311,20 @@ ws.addEventListener("mousedown", e => {
   }
 });
 
-window.deleteSticky = async () => {
+window.deleteSticky = () => {
   const { el, note } = window.ctxNote;
   const idx = projects[currentProject].indexOf(note);
   if (idx >= 0) {
     projects[currentProject].splice(idx, 1);
-    await saveProjects();
+    saveProjects();
     renderNotes();
   }
   document.getElementById("contextMenu").style.display = "none";
 };
+
+// Init
+loadProjects();
+renderProjects();
 </script>
 </body>
 </html>
