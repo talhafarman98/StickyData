@@ -83,47 +83,54 @@
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
 
+      message.textContent = "";
+      message.style.color = "black";
+
       if (!email || !password) {
-        message.textContent = "Please enter both email and password.";
+        message.textContent = "Please enter email and password.";
         message.style.color = "red";
         return;
       }
 
       spinner.style.display = "block";
       loginBtn.disabled = true;
-      message.textContent = "";
 
-      const { data: loginData, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+      spinner.style.display = "none";
+      loginBtn.disabled = false;
 
       if (error) {
-        spinner.style.display = "none";
-        loginBtn.disabled = false;
-        message.style.color = "red";
         message.textContent = error.message;
+        message.style.color = "red";
         return;
       }
 
-      // Find user in user_projects table
-      const { data: users, error: userError } = await supabase
+      if (!data.session || !data.session.user.email_confirmed_at) {
+        message.style.color = "red";
+        message.textContent = "Please confirm your email before logging in.";
+        return;
+      }
+
+      const { data: userInfo, error: userFetchError } = await supabase
         .from("user_projects")
         .select("username")
         .eq("email", email)
         .single();
 
-      if (userError || !users) {
-        spinner.style.display = "none";
-        loginBtn.disabled = false;
+      if (userFetchError || !userInfo) {
+        message.textContent = "User data not found in database.";
         message.style.color = "red";
-        message.textContent = "User data not found.";
         return;
       }
 
-      spinner.style.display = "none";
-      message.style.color = "green";
+      const username = userInfo.username;
       message.textContent = "Login successful! Redirecting...";
+      message.style.color = "green";
 
-      const username = users.username;
-      setTimeout(() => window.location.href = `index.html?user=${username}`, 1500);
+      setTimeout(() => {
+        window.location.href = `index.html?user=${encodeURIComponent(username)}`;
+      }, 1500);
     });
   </script>
 </body>
