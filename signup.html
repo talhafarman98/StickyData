@@ -36,7 +36,7 @@
       cursor: pointer;
     }
     button:hover { background: #5a3a82; }
-    p { text-align: center; }
+    p, a { text-align: center; display: block; }
 
     .spinner {
       border: 4px solid #f3f3f3;
@@ -65,28 +65,29 @@
     <input type="password" id="password" placeholder="Password" />
     <button id="signupBtn">Create Account</button>
     <p id="message"></p>
+    <a href="login.html">Already have an account? Login</a>
   </div>
 
   <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js';
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js'
 
-    const supabase = createClient(
-      'https://xhsnkexolqhgucplmjyq.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhoc25rZXhvbHFoZ3VjcGxtanlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5ODU0OTEsImV4cCI6MjA2ODU2MTQ5MX0.XhsnJAWZtFNX3915p8mUF6RB6NmgfD3d6wUZ7DaoC30'
-    );
+    const supabaseUrl = 'https://xhsnkexolqhgucplmjyq.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhoc25rZXhvbHFoZ3VjcGxtanlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5ODU0OTEsImV4cCI6MjA2ODU2MTQ5MX0.XhsnJAWZtFNX3915p8mUF6RB6NmgfD3d6wUZ7DaoC30';
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     const signupBtn = document.getElementById("signupBtn");
     const spinner = document.getElementById("spinner");
     const message = document.getElementById("message");
 
     signupBtn.addEventListener("click", async () => {
-      const email = document.getElementById("email").value;
+      const username = document.getElementById("username").value.trim();
+      const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
-      const username = document.getElementById("username").value;
 
       if (!username || !email || !password) {
+        message.textContent = "Please fill all fields.";
         message.style.color = "red";
-        message.textContent = "Please fill in all fields.";
         return;
       }
 
@@ -99,19 +100,19 @@
       if (error) {
         spinner.style.display = "none";
         signupBtn.disabled = false;
-        message.style.color = "red";
         message.textContent = error.message;
+        message.style.color = "red";
         return;
       }
 
-      // Save username in user_projects table
-      await supabase.from("user_projects").insert({ username, projects: {} });
+      // Insert user into user_projects table
+      await supabase
+        .from("user_projects")
+        .insert({ username, email, projects: {} });
 
       spinner.style.display = "none";
-      signupBtn.disabled = false;
       message.style.color = "green";
-      message.textContent = "Signup successful! Check email to confirm.";
-
+      message.textContent = "Signup successful! Check your email to confirm.";
       setTimeout(() => window.location.href = "login.html", 2000);
     });
   </script>
