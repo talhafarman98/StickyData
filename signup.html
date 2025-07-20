@@ -60,6 +60,7 @@
   <div class="card">
     <div class="spinner" id="spinner"></div>
     <h2>Sign Up</h2>
+    <input type="text" id="username" placeholder="Username" />
     <input type="email" id="email" placeholder="Email" />
     <input type="password" id="password" placeholder="Password" />
     <button id="signupBtn">Create Account</button>
@@ -67,12 +68,12 @@
   </div>
 
   <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js'
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js';
 
-    const supabaseUrl = 'https://xhsnkexolqhgucplmjyq.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhoc25rZXhvbHFoZ3VjcGxtanlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5ODU0OTEsImV4cCI6MjA2ODU2MTQ5MX0.XhsnJAWZtFNX3915p8mUF6RB6NmgfD3d6wUZ7DaoC30';
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(
+      'https://xhsnkexolqhgucplmjyq.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhoc25rZXhvbHFoZ3VjcGxtanlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5ODU0OTEsImV4cCI6MjA2ODU2MTQ5MX0.XhsnJAWZtFNX3915p8mUF6RB6NmgfD3d6wUZ7DaoC30'
+    );
 
     const signupBtn = document.getElementById("signupBtn");
     const spinner = document.getElementById("spinner");
@@ -81,24 +82,37 @@
     signupBtn.addEventListener("click", async () => {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
+      const username = document.getElementById("username").value;
+
+      if (!username || !email || !password) {
+        message.style.color = "red";
+        message.textContent = "Please fill in all fields.";
+        return;
+      }
 
       spinner.style.display = "block";
       signupBtn.disabled = true;
       message.textContent = "";
 
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { data: signUpData, error } = await supabase.auth.signUp({ email, password });
+
+      if (error) {
+        spinner.style.display = "none";
+        signupBtn.disabled = false;
+        message.style.color = "red";
+        message.textContent = error.message;
+        return;
+      }
+
+      // Save username in user_projects table
+      await supabase.from("user_projects").insert({ username, projects: {} });
 
       spinner.style.display = "none";
       signupBtn.disabled = false;
+      message.style.color = "green";
+      message.textContent = "Signup successful! Check email to confirm.";
 
-      if (error) {
-        message.style.color = "red";
-        message.textContent = error.message;
-      } else {
-        message.style.color = "green";
-        message.textContent = "Signup successful! Check your email to confirm.";
-        setTimeout(() => window.location.href = "login.html", 2000);
-      }
+      setTimeout(() => window.location.href = "login.html", 2000);
     });
   </script>
 </body>
