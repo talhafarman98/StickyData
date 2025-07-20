@@ -54,6 +54,17 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+
+    .link {
+      color: #ff4e78;
+      text-align: center;
+      display: block;
+      margin-top: 10px;
+      text-decoration: none;
+    }
+    .link:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -63,16 +74,17 @@
     <input type="email" id="email" placeholder="Email" />
     <input type="password" id="password" placeholder="Password" />
     <button id="loginBtn">Login</button>
+    <a href="signup.html" class="link">Create an account</a>
     <p id="message"></p>
   </div>
 
   <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js';
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js'
 
-    const supabase = createClient(
-      'https://xhsnkexolqhgucplmjyq.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhoc25rZXhvbHFoZ3VjcGxtanlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5ODU0OTEsImV4cCI6MjA2ODU2MTQ5MX0.XhsnJAWZtFNX3915p8mUF6RB6NmgfD3d6wUZ7DaoC30'
-    );
+    const supabaseUrl = 'https://xhsnkexolqhgucplmjyq.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhoc25rZXhvbHFoZ3VjcGxtanlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5ODU0OTEsImV4cCI6MjA2ODU2MTQ5MX0.XhsnJAWZtFNX3915p8mUF6RB6NmgfD3d6wUZ7DaoC30';
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     const loginBtn = document.getElementById("loginBtn");
     const spinner = document.getElementById("spinner");
@@ -86,7 +98,10 @@
       loginBtn.disabled = true;
       message.textContent = "";
 
-      const { data: loginData, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
       if (error) {
         spinner.style.display = "none";
@@ -96,26 +111,32 @@
         return;
       }
 
-      // Fetch username from table
-      const { data: userRow } = await supabase
+      // Get the user's email from session
+      const userEmail = data.user.email;
+
+      // Fetch username from user_projects table
+      const { data: userData, error: userError } = await supabase
         .from("user_projects")
         .select("username")
-        .eq("email", email)
-        .maybeSingle();
-
-      const username = userRow?.username || "";
+        .eq("email", userEmail)
+        .single();
 
       spinner.style.display = "none";
       loginBtn.disabled = false;
 
-      if (username) {
-        message.style.color = "green";
-        message.textContent = "Login successful! Redirecting...";
-        setTimeout(() => window.location.href = `index.html?user=${username}`, 1500);
-      } else {
+      if (userError || !userData) {
         message.style.color = "red";
-        message.textContent = "User record not found.";
+        message.textContent = "User data not found.";
+        return;
       }
+
+      message.style.color = "green";
+      message.textContent = "Login successful! Redirecting...";
+
+      // Redirect to index.html with ?user=username
+      setTimeout(() => {
+        window.location.href = `index.html?user=${encodeURIComponent(userData.username)}`;
+      }, 1500);
     });
   </script>
 </body>
