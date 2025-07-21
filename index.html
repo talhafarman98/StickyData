@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sticky Notes Dashboard</title>
   <style>
     body {
@@ -10,7 +10,6 @@
       font-family: 'Segoe UI', sans-serif;
       background: #fdf6f0;
       overflow: hidden;
-      cursor: default;
     }
 
     .sidebar {
@@ -19,7 +18,7 @@
       left: 0;
       width: 220px;
       height: 100%;
-      background: #fff;
+      background: #ffffff;
       border-right: 1px solid #ddd;
       padding-top: 60px;
       box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
@@ -36,32 +35,33 @@
       position: fixed;
       top: 10px;
       left: 10px;
-      background: black;
+      background: #333;
       color: white;
       padding: 10px 14px;
       border-radius: 6px;
       cursor: pointer;
       z-index: 999;
+      border: none;
     }
 
-    .project-list li,
-    #addProjectBtn {
-      list-style: none;
-      padding: 10px 16px;
-      margin: 4px;
-      background: #f1f1f1;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.2s;
-      width: calc(100% - 32px);
+    #addProjectBtn, .project-list li {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin: 0;
       box-sizing: border-box;
+      background: #e0e0e0;
+      border: none;
+      border-bottom: 1px solid #ccc;
+      cursor: pointer;
+      font-size: 15px;
+      text-align: left;
     }
 
     .project-list li.active,
     .project-list li:hover,
     #addProjectBtn:hover {
-      background: #ddd;
+      background: #bdbdbd;
     }
 
     .top-bar {
@@ -74,24 +74,26 @@
     }
 
     .top-bar button {
-      background: #d9d9d9;
+      background: #757575;
+      color: white;
       border: none;
       padding: 10px 20px;
       font-size: 16px;
       border-radius: 6px;
       cursor: pointer;
-      transition: transform 0.2s ease;
+      transition: transform 0.2s ease, background 0.3s;
     }
 
     .top-bar button:hover {
       transform: scale(1.05);
+      background: #616161;
     }
 
     .palette {
       display: flex;
       gap: 8px;
       padding: 4px;
-      background: #fff;
+      background: #ffffff;
       border: 1px solid #ccc;
       border-radius: 6px;
     }
@@ -120,10 +122,10 @@
       background: #fff8c6;
       border-radius: 8px;
       box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.2);
-      resize: both;
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      resize: both;
     }
 
     .sticky-note .header {
@@ -131,6 +133,7 @@
       background: rgba(0, 0, 0, 0.05);
       cursor: move;
       padding: 4px;
+      user-select: none;
     }
 
     .sticky-note textarea {
@@ -151,14 +154,28 @@
       display: none;
       z-index: 999;
     }
+
+    footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #000;
+      color: white;
+      text-align: center;
+      padding: 6px;
+      font-size: 12px;
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
+
 <div class="sidebar-toggle" onclick="toggleSidebar()">☰</div>
 <div class="sidebar" id="sidebar">
   <button id="addProjectBtn">+ New Project</button>
-  <h3 style="text-align:center">Projects</h3>
-  <ul class="project-list" id="projectList"></ul>
+  <h3 style="text-align:center; margin:10px 0;">Projects</h3>
+  <ul class="project-list" id="projectList" style="padding:0; margin:0;"></ul>
 </div>
 
 <div class="top-bar">
@@ -176,155 +193,197 @@
   <button onclick="deleteSticky()">Delete</button>
 </div>
 
+<footer>Created by Muhammad Talha</footer>
+
 <script>
-let currentProject = null, projects = {};
-const ws = document.getElementById("workspace");
+  let currentProject = null, projects = {};
+  const ws = document.getElementById("workspace");
 
-function saveProjects() {
-  localStorage.setItem("stickyProjects", JSON.stringify(projects));
-}
+  function saveProjects() {
+    localStorage.setItem("stickyProjects", JSON.stringify(projects));
+  }
 
-function loadProjects() {
-  const data = localStorage.getItem("stickyProjects");
-  if (data) projects = JSON.parse(data);
-}
+  function loadProjects() {
+    const data = localStorage.getItem("stickyProjects");
+    if (data) projects = JSON.parse(data);
+  }
 
-function toggleSidebar() {
-  document.getElementById("sidebar").classList.toggle("hidden");
-}
+  function toggleSidebar() {
+    document.getElementById("sidebar").classList.toggle("hidden");
+  }
 
-function togglePalette() {
-  const p = document.getElementById("palette");
-  p.style.display = p.style.display === "none" ? "flex" : "none";
-}
+  function togglePalette() {
+    const p = document.getElementById("palette");
+    p.style.display = p.style.display === "none" ? "flex" : "none";
+  }
 
-function renderProjects() {
-  const ul = document.getElementById("projectList");
-  ul.innerHTML = "";
-  Object.keys(projects).forEach(name => {
-    const li = document.createElement("li");
-    li.textContent = name;
-    li.classList.toggle("active", name === currentProject);
-    li.onclick = () => { currentProject = name; renderProjects(); renderNotes(); };
-    li.ondblclick = () => {
-      if (confirm("Delete project?")) {
-        delete projects[name];
-        saveProjects();
-        currentProject = null;
+  function renderProjects() {
+    const ul = document.getElementById("projectList");
+    ul.innerHTML = "";
+    Object.keys(projects).forEach(name => {
+      const li = document.createElement("li");
+      li.textContent = name;
+      li.classList.toggle("active", name === currentProject);
+      li.onclick = () => {
+        currentProject = name;
         renderProjects();
         renderNotes();
+      };
+      li.ondblclick = () => {
+        if (confirm("Delete project?")) {
+          delete projects[name];
+          saveProjects();
+          currentProject = null;
+          renderProjects();
+          renderNotes();
+        }
+      };
+      ul.appendChild(li);
+    });
+  }
+
+  document.getElementById("addProjectBtn").onclick = () => {
+    const name = prompt("Enter project name:");
+    if (!name || projects[name]) return;
+    projects[name] = [];
+    currentProject = name;
+    saveProjects();
+    renderProjects();
+    renderNotes();
+  };
+
+  function findFreePosition() {
+    const padding = 20;
+    for (let y = 0; y < 4000; y += 240) {
+      for (let x = 0; x < 4000; x += 240) {
+        let occupied = false;
+        for (let note of projects[currentProject]) {
+          const dx = note.x - x;
+          const dy = note.y - y;
+          if (Math.abs(dx) < 220 && Math.abs(dy) < 220) {
+            occupied = true;
+            break;
+          }
+        }
+        if (!occupied) return { x, y };
       }
-    };
-    ul.appendChild(li);
-  });
-}
+    }
+    return { x: 100 + Math.random() * 1000, y: 100 + Math.random() * 1000 };
+  }
 
-document.getElementById("addProjectBtn").onclick = () => {
-  const name = prompt("Enter project name:");
-  if (!name) return;
-  projects[name] = [];
-  currentProject = name;
-  saveProjects();
+  document.querySelectorAll(".palette div").forEach(div => {
+    div.onclick = () => {
+      if (!currentProject) return alert("Select a project first.");
+      const pos = findFreePosition();
+      const note = {
+        x: pos.x,
+        y: pos.y,
+        w: 200,
+        h: 200,
+        text: "",
+        color: div.dataset.color
+      };
+      projects[currentProject].push(note);
+      saveProjects();
+      renderNotes();
+    };
+  });
+
+  function renderNotes() {
+    ws.innerHTML = "";
+    if (!currentProject) return;
+    projects[currentProject].forEach(note => {
+      const el = document.createElement("div");
+      el.className = "sticky-note";
+      el.style.left = note.x + "px";
+      el.style.top = note.y + "px";
+      el.style.width = (note.w || 200) + "px";
+      el.style.height = (note.h || 200) + "px";
+      el.style.background = note.color;
+      el.innerHTML = `<div class="header"></div><textarea>${note.text}</textarea>`;
+      const ta = el.querySelector("textarea");
+      ta.oninput = () => { note.text = ta.value; saveProjects(); };
+      const hdr = el.querySelector(".header");
+      hdr.onmousedown = dragStart(el, note);
+      el.oncontextmenu = e => {
+        e.preventDefault();
+        document.getElementById("contextMenu").style.display = "block";
+        document.getElementById("contextMenu").style.left = e.pageX + "px";
+        document.getElementById("contextMenu").style.top = e.pageY + "px";
+        window.ctxNote = { el, note };
+      };
+
+      // Save size changes
+      const resizeObserver = new ResizeObserver(() => {
+        note.w = el.offsetWidth;
+        note.h = el.offsetHeight;
+        saveProjects();
+      });
+      resizeObserver.observe(el);
+
+      ws.appendChild(el);
+    });
+    document.getElementById("contextMenu").style.display = "none";
+  }
+
+  let isDraggingNote = false, dragEl, dragNote, offsetX, offsetY;
+
+  function dragStart(el, note) {
+    return function (e) {
+      isDraggingNote = true;
+      dragEl = el;
+      dragNote = note;
+      offsetX = e.offsetX;
+      offsetY = e.offsetY;
+      e.stopPropagation();
+    };
+  }
+
+  let isDraggingWorkspace = false, lastMouseX = 0, lastMouseY = 0;
+
+  ws.addEventListener("mousedown", e => {
+    if (e.target === ws) {
+      isDraggingWorkspace = true;
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+      ws.style.cursor = 'grabbing';
+    }
+  });
+
+  ws.addEventListener("mousemove", e => {
+    if (isDraggingNote) {
+      dragEl.style.left = (e.pageX - offsetX) + "px";
+      dragEl.style.top = (e.pageY - offsetY) + "px";
+      dragNote.x = e.pageX - offsetX;
+      dragNote.y = e.pageY - offsetY;
+    } else if (isDraggingWorkspace) {
+      window.scrollBy(lastMouseX - e.clientX, lastMouseY - e.clientY);
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+    }
+  });
+
+  ws.addEventListener("mouseup", () => {
+    isDraggingNote = false;
+    isDraggingWorkspace = false;
+    ws.style.cursor = 'grab';
+    saveProjects();
+  });
+
+  window.deleteSticky = () => {
+    const { note } = window.ctxNote;
+    const idx = projects[currentProject].indexOf(note);
+    if (idx >= 0) {
+      projects[currentProject].splice(idx, 1);
+      saveProjects();
+      renderNotes();
+    }
+    document.getElementById("contextMenu").style.display = "none";
+  };
+
+  // Init
+  loadProjects();
   renderProjects();
-  renderNotes();
-};
-
-document.querySelectorAll(".palette div").forEach(div => {
-  div.onclick = () => {
-    if (!currentProject) return alert("Select a project first.");
-    const note = {
-      x: 200 + Math.random() * 800,
-      y: 200 + Math.random() * 800,
-      text: "",
-      color: div.dataset.color
-    };
-    projects[currentProject].push(note);
-    saveProjects();
-    renderNotes();
-  };
-});
-
-function renderNotes() {
-  ws.innerHTML = "";
-  if (!currentProject) return;
-  projects[currentProject].forEach(note => {
-    const el = document.createElement("div");
-    el.className = "sticky-note";
-    el.style.left = note.x + "px";
-    el.style.top = note.y + "px";
-    el.style.background = note.color;
-    el.innerHTML = `<div class="header"></div><textarea>${note.text}</textarea>`;
-    const ta = el.querySelector("textarea");
-    ta.oninput = () => { note.text = ta.value; saveProjects(); };
-    const hdr = el.querySelector(".header");
-    hdr.onmousedown = dragStart(el, note);
-    el.oncontextmenu = e => {
-      e.preventDefault();
-      document.getElementById("contextMenu").style.display = "block";
-      document.getElementById("contextMenu").style.left = e.pageX + "px";
-      document.getElementById("contextMenu").style.top = e.pageY + "px";
-      window.ctxNote = { el, note };
-    };
-    ws.appendChild(el);
-  });
-  document.getElementById("contextMenu").style.display = "none";
-}
-
-let isDraggingNote = false, dragEl, dragNote, offsetX, offsetY;
-function dragStart(el, note) {
-  return function (e) {
-    isDraggingNote = true;
-    dragEl = el;
-    dragNote = note;
-    offsetX = e.offsetX;
-    offsetY = e.offsetY;
-    e.stopPropagation();
-  };
-}
-
-ws.addEventListener("mousemove", e => {
-  if (isDraggingNote) {
-    dragEl.style.left = (e.pageX - offsetX) + "px";
-    dragEl.style.top = (e.pageY - offsetY) + "px";
-    dragNote.x = e.pageX - offsetX;
-    dragNote.y = e.pageY - offsetY;
-  } else if (isDraggingWorkspace) {
-    ws.scrollLeft -= (e.pageX - lastMouseX);
-    ws.scrollTop -= (e.pageY - lastMouseY);
-    lastMouseX = e.pageX;
-    lastMouseY = e.pageY;
-  }
-});
-
-ws.addEventListener("mouseup", () => {
-  isDraggingNote = false;
-  isDraggingWorkspace = false;
-  saveProjects();
-});
-
-let isDraggingWorkspace = false, lastMouseX, lastMouseY;
-ws.addEventListener("mousedown", e => {
-  if (e.target === ws) {
-    isDraggingWorkspace = true;
-    lastMouseX = e.pageX;
-    lastMouseY = e.pageY;
-  }
-});
-
-window.deleteSticky = () => {
-  const { el, note } = window.ctxNote;
-  const idx = projects[currentProject].indexOf(note);
-  if (idx >= 0) {
-    projects[currentProject].splice(idx, 1);
-    saveProjects();
-    renderNotes();
-  }
-  document.getElementById("contextMenu").style.display = "none";
-};
-
-// Init
-loadProjects();
-renderProjects();
 </script>
 </body>
 </html>
